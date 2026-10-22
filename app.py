@@ -20,9 +20,9 @@ import evidence_core as core
 # Page setup
 # --------------------------------------------------------------------------
 st.set_page_config(
-    page_title="EvidenceGuard",
+    page_title="EvidenceGuard | Digital Forensics",
     page_icon="🛡️",
-    layout="centered",  # a single column reads well on phones and desktops
+    layout="wide",  # responsive dashboard layout
     initial_sidebar_state="collapsed",
 )
 
@@ -30,22 +30,28 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-      .block-container { padding-top: 1.2rem; padding-bottom: 3rem; max-width: 820px; }
+      .block-container { padding-top: 1rem; padding-bottom: 3rem; max-width: 1120px; }
       .eg-hero {
-        background: linear-gradient(135deg, #0f2a4a 0%, #1f6feb 100%);
-        color: #ffffff; padding: 1.1rem 1.3rem; border-radius: 14px; margin-bottom: 1rem;
+        background: linear-gradient(135deg, #081b33 0%, #123d72 55%, #1f6feb 100%);
+        color: #ffffff; padding: 1.35rem 1.45rem; border: 1px solid #3568a6;
+        border-radius: 18px; margin-bottom: 1rem; box-shadow: 0 8px 28px rgba(31,111,235,.14);
       }
-      .eg-hero h1 { color: #ffffff; margin: 0; font-size: 1.75rem; line-height: 1.2; }
-      .eg-hero p  { color: #e6efff; margin: .35rem 0 0 0; font-size: .95rem; }
+      .eg-hero h1 { color: #ffffff; margin: 0; font-size: 2rem; line-height: 1.2; letter-spacing: -.02em; }
+      .eg-hero p  { color: #e6efff; margin: .45rem 0 0 0; font-size: 1rem; }
+      .eg-kicker { color: #93c5fd; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; font-size: .72rem; }
+      div[data-testid="stMetric"] { background: rgba(127, 127, 127, .08); padding: .8rem; border-radius: 12px; border: 1px solid rgba(127,127,127,.18); }
+      div[data-testid="stTabs"] button { font-weight: 650; }
       code { word-break: break-all; }
       @media (max-width: 640px) {
-        .eg-hero h1 { font-size: 1.4rem; }
-        .block-container { padding-left: 0.8rem; padding-right: 0.8rem; }
+        .eg-hero h1 { font-size: 1.5rem; }
+        .eg-hero { padding: 1rem; border-radius: 14px; }
+        .block-container { padding-left: 0.75rem; padding-right: 0.75rem; }
       }
     </style>
     <div class="eg-hero">
+      <div class="eg-kicker">Digital forensics toolkit · Hackathon prototype</div>
       <h1>🛡️ EvidenceGuard</h1>
-      <p>Digital Evidence Integrity Checker &middot; Cyber Hackathon 2026</p>
+      <p>Check file fingerprints, inspect available metadata, and document your findings.</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -142,6 +148,42 @@ uploaded_files = st.file_uploader(
     accept_multiple_files=True,
     key=f"uploader_{st.session_state['uploader_key']}",
 )
+
+# --------------------------------------------------------------------------
+# Batch overview: quick, transparent summary before the detailed file tabs
+# --------------------------------------------------------------------------
+if uploaded_files:
+    st.markdown("### 📊 Batch overview")
+    valid_summaries = []
+    for item in uploaded_files[: core.MAX_FILES_PER_BATCH]:
+        raw = item.getvalue()
+        safe_name = core.safe_filename(item.name)
+        issues = core.validate_upload(safe_name, len(raw))
+        if not issues:
+            valid_summaries.append({
+                "File": safe_name,
+                "Size": core.human_size(len(raw)),
+                "SHA-256": core.sha256_hex(raw),
+            })
+    unique_hashes = len({x["SHA-256"] for x in valid_summaries})
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Files selected", len(uploaded_files))
+    m2.metric("Files ready", len(valid_summaries))
+    m3.metric("Unique fingerprints", unique_hashes)
+    if valid_summaries:
+        st.dataframe(
+            [{"File": x["File"], "Size": x["Size"], "SHA-256": x["SHA-256"]} for x in valid_summaries],
+            use_container_width=True, hide_index=True,
+        )
+        hash_groups = {}
+        for item in valid_summaries:
+            hash_groups.setdefault(item["SHA-256"], []).append(item["File"])
+        duplicate_groups = [group for group in hash_groups.values() if len(group) > 1]
+        if duplicate_groups:
+            st.info("Identical file contents detected in this batch: " + "; ".join(", ".join(g) for g in duplicate_groups))
+        else:
+            st.caption("No byte-identical files were detected in this batch. Different hashes do not explain what changed.")
+    st.caption("Batch fingerprints are calculated from the uploaded bytes. Files are not saved by this overview.")
 
 
 def show_table(rows):
@@ -307,6 +349,7 @@ else:
 # Evidence log (current session only)
 # --------------------------------------------------------------------------
 st.subheader("3 · Evidence log (this session only)")
+st.caption("Session tracking is a convenience log, not a tamper-proof chain-of-custody system. Download the case report before ending your session.")
 log = st.session_state["evidence_log"]
 if not log:
     st.caption("The log is empty. Use “Add to evidence log” in a file's Report tab.")

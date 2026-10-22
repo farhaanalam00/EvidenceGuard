@@ -130,3 +130,16 @@ Reliable manipulation detection needs specialist analysis; this tool avoids fals
 ## Limitations
 This is a learning/hackathon prototype, not a certified forensic tool. See the
 "Limitations & privacy" panel in the app for the full list.
+
+
+## Version 1.1.0 showcase additions
+
+- Responsive dashboard styling for phone and desktop.
+- Batch overview showing selected/valid file counts and SHA-256 fingerprints.
+- Detects byte-identical files within the same upload batch (same SHA-256).
+- Clearer session evidence-log warning: this is not a tamper-proof chain of custody.
+- Existing per-file integrity comparison, supported image metadata inspection, and TXT/JSON reports are retained.
+
+### Important interpretation note
+
+A matching hash only shows that the uploaded bytes match the chosen reference. It does not establish authenticity, truth, authorship, or when a file was created. The batch overview is calculated from files currently selected and does not permanently store the files.

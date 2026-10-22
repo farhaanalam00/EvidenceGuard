@@ -34,7 +34,7 @@ from PIL.ExifTags import GPSTAGS, TAGS
 # Settings
 # --------------------------------------------------------------------------
 APP_NAME = "EvidenceGuard"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 
 MAX_FILE_SIZE_MB = 25
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
