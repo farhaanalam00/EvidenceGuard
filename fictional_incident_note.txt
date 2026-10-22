@@ -1,0 +1,4 @@
+FICTIONAL INCIDENT NOTE - FOR TESTING ONLY
+Case: Demo-001
+Observation: The server room door was found unlocked at 09:15.
+Witness: Alex Example (fictional person)
